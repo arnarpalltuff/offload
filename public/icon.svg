@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#050810"/>
+  <!-- Circle representing the mind -->
+  <circle cx="256" cy="280" r="120" fill="none" stroke="#00FF88" stroke-width="32" stroke-linecap="round" stroke-dasharray="280 100"/>
+  <!-- Upward arrow emerging from the circle — the "offload" action -->
+  <line x1="256" y1="100" x2="256" y2="260" stroke="#00FF88" stroke-width="32" stroke-linecap="round"/>
+  <polyline points="196,160 256,100 316,160" fill="none" stroke="#00FF88" stroke-width="32" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

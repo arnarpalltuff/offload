@@ -1,0 +1,16 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/generate",
+      "schedule": "5 0 * * *"
+    },
+    {
+      "path": "/api/cron/resolve",
+      "schedule": "0 21 * * *"
+    },
+    {
+      "path": "/api/cron/streak-break",
+      "schedule": "0 22 * * *"
+    }
+  ]
+}
