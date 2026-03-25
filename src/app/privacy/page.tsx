@@ -53,14 +53,14 @@ export default function PrivacyPage() {
           <h2 className="text-lg font-semibold text-foreground">Third-party services</h2>
           <ul className="list-disc pl-5 space-y-1">
             <li><strong>Anthropic (Claude AI)</strong> — processes your text for organization and insights. Subject to Anthropic&apos;s privacy policy.</li>
-            <li><strong>Stripe</strong> — handles payment processing for Pro subscriptions. We never see or store your card details.</li>
+            <li><strong>Lemon Squeezy</strong> — handles payment processing for Pro subscriptions. We never see or store your card details.</li>
             <li><strong>Supabase</strong> — hosts our database and authentication.</li>
           </ul>
         </section>
 
         <section>
           <h2 className="text-lg font-semibold text-foreground">Contact</h2>
-          <p>Questions about your data? Reach out at privacy@offload.app.</p>
+          <p>Questions about your data? Reach out at arnarpalltuff@users.noreply.github.com.</p>
         </section>
       </div>
     </div>
