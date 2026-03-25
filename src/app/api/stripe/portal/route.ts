@@ -7,7 +7,7 @@ export async function POST() {
   }
 
   try {
-    const { stripe } = await import('@/lib/stripe');
+    const { lemonSqueezyFetch } = await import('@/lib/stripe');
     const { createClient } = await import('@/lib/supabase/server');
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -16,23 +16,21 @@ export async function POST() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Look up the Stripe customer by email
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-    if (customers.data.length === 0) {
-      return NextResponse.json({ error: 'No billing account found. Please contact support.' }, { status: 404 });
+    // Find the customer's subscriptions
+    const data = await lemonSqueezyFetch(`/subscriptions?filter[user_email]=${encodeURIComponent(user.email)}`);
+
+    const subscription = data?.data?.[0];
+    if (!subscription) {
+      return NextResponse.json({ error: 'No subscription found.' }, { status: 404 });
     }
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL;
-    if (!appUrl) {
-      return NextResponse.json({ error: 'App URL not configured. Please contact support.' }, { status: 500 });
+    // Lemon Squeezy provides a customer portal URL on each subscription
+    const portalUrl = subscription.attributes?.urls?.customer_portal;
+    if (!portalUrl) {
+      return NextResponse.json({ error: 'Portal URL not available.' }, { status: 500 });
     }
 
-    const session = await stripe.billingPortal.sessions.create({
-      customer: customers.data[0].id,
-      return_url: `${appUrl}/account`,
-    });
-
-    return NextResponse.json({ url: session.url });
+    return NextResponse.json({ url: portalUrl });
   } catch {
     return NextResponse.json({ error: 'Failed to create portal session. Please try again.' }, { status: 500 });
   }

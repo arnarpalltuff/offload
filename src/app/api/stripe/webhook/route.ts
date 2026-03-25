@@ -1,5 +1,12 @@
 import { NextResponse } from 'next/server';
 import { DEMO_MODE } from '@/lib/demo';
+import crypto from 'crypto';
+
+function verifyWebhookSignature(payload: string, signature: string, secret: string): boolean {
+  const hmac = crypto.createHmac('sha256', secret);
+  const digest = hmac.update(payload).digest('hex');
+  return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(digest));
+}
 
 export async function POST(request: Request) {
   if (DEMO_MODE) {
@@ -7,7 +14,6 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { stripe } = await import('@/lib/stripe');
     const { createClient } = await import('@supabase/supabase-js');
 
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -20,62 +26,58 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Supabase URL not configured' }, { status: 500 });
     }
 
-    const supabase = createClient(
-      supabaseUrl,
-      serviceRoleKey,
-    );
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     const body = await request.text();
-    const signature = request.headers.get('stripe-signature');
+    const signature = request.headers.get('x-signature');
 
     if (!signature) {
-      return NextResponse.json({ error: 'Missing stripe-signature header' }, { status: 400 });
+      return NextResponse.json({ error: 'Missing webhook signature' }, { status: 400 });
     }
 
-    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    const webhookSecret = process.env.LEMONSQUEEZY_WEBHOOK_SECRET;
     if (!webhookSecret) {
       return NextResponse.json({ error: 'Webhook secret not configured' }, { status: 500 });
     }
 
-    const event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+    if (!verifyWebhookSignature(body, signature, webhookSecret)) {
+      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+    }
 
-    switch (event.type) {
-      case 'checkout.session.completed': {
-        const session = event.data.object;
-        const customerEmail = session.customer_details?.email;
-        if (customerEmail) {
-          await supabase
-            .from('users')
-            .update({ is_premium: true })
-            .eq('email', customerEmail);
-        }
+    const event = JSON.parse(body);
+    const eventName = event.meta?.event_name;
+    const customerEmail = event.data?.attributes?.user_email;
+
+    if (!customerEmail) {
+      return NextResponse.json({ received: true });
+    }
+
+    switch (eventName) {
+      case 'subscription_created':
+      case 'subscription_resumed': {
+        await supabase
+          .from('users')
+          .update({ is_premium: true })
+          .eq('email', customerEmail);
         break;
       }
 
-      case 'customer.subscription.deleted': {
-        const subscription = event.data.object;
-        const customerId = subscription.customer as string;
-        const customer = await stripe.customers.retrieve(customerId);
-        if (!customer.deleted && customer.email) {
-          await supabase
-            .from('users')
-            .update({ is_premium: false })
-            .eq('email', customer.email);
-        }
+      case 'subscription_cancelled':
+      case 'subscription_expired': {
+        await supabase
+          .from('users')
+          .update({ is_premium: false })
+          .eq('email', customerEmail);
         break;
       }
 
-      case 'customer.subscription.updated': {
-        const subscription = event.data.object;
-        const customerId = subscription.customer as string;
-        const customer = await stripe.customers.retrieve(customerId);
-        if (!customer.deleted && customer.email) {
-          const isActive = subscription.status === 'active' || subscription.status === 'trialing';
-          await supabase
-            .from('users')
-            .update({ is_premium: isActive })
-            .eq('email', customer.email);
-        }
+      case 'subscription_updated': {
+        const status = event.data?.attributes?.status;
+        const isActive = status === 'active' || status === 'on_trial';
+        await supabase
+          .from('users')
+          .update({ is_premium: isActive })
+          .eq('email', customerEmail);
         break;
       }
     }

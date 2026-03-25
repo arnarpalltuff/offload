@@ -1,12 +1,17 @@
-import Stripe from 'stripe';
+// Lemon Squeezy configuration
+export const LEMONSQUEEZY_API_KEY = process.env.LEMONSQUEEZY_API_KEY || '';
+export const LEMONSQUEEZY_STORE_ID = process.env.LEMONSQUEEZY_STORE_ID || '';
+export const LEMONSQUEEZY_VARIANT_ID = process.env.LEMONSQUEEZY_VARIANT_ID || '';
 
-const secretKey = process.env.STRIPE_SECRET_KEY;
-if (!secretKey) {
-  throw new Error('STRIPE_SECRET_KEY environment variable is not set.');
+export async function lemonSqueezyFetch(endpoint: string, options: RequestInit = {}) {
+  const res = await fetch(`https://api.lemonsqueezy.com/v1${endpoint}`, {
+    ...options,
+    headers: {
+      'Accept': 'application/vnd.api+json',
+      'Content-Type': 'application/vnd.api+json',
+      'Authorization': `Bearer ${LEMONSQUEEZY_API_KEY}`,
+      ...options.headers,
+    },
+  });
+  return res.json();
 }
-
-export const stripe = new Stripe(secretKey, {
-  apiVersion: '2026-02-25.clover',
-});
-
-export const OFFLOAD_PRO_PRICE_ID = process.env.STRIPE_PRICE_ID || 'price_demo';
