@@ -227,7 +227,7 @@ export default function PricingPage() {
             </div>
 
             <div className="mb-8">
-              <span className="text-5xl font-black text-[#e2e8f0]">$4.99</span>
+              <span className="text-5xl font-black text-[#e2e8f0]">$9.99</span>
               <span className="text-sm text-[#64748b] ml-1">/month</span>
             </div>
 
