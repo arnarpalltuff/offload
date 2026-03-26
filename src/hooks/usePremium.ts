@@ -23,16 +23,16 @@ export function usePremium() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    // Check for ?upgraded=true in URL (Stripe checkout redirect)
+    // Check for ?upgraded=true in URL (checkout redirect) — show premium UI immediately
+    // but always verify against database below
     const params = new URLSearchParams(window.location.search);
-    if (params.get('upgraded') === 'true') {
-      localStorage.setItem(PREMIUM_KEY, 'true');
-      setIsPremium(true);
+    const justUpgraded = params.get('upgraded') === 'true';
+    if (justUpgraded) {
       window.history.replaceState({}, '', window.location.pathname);
     }
 
     // Start with localStorage (fast), then verify against database (authoritative)
-    const premiumStored = localStorage.getItem(PREMIUM_KEY) === 'true';
+    const premiumStored = justUpgraded || localStorage.getItem(PREMIUM_KEY) === 'true';
     setIsPremium(premiumStored);
 
     if (!DEMO_MODE) {

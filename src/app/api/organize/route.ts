@@ -33,6 +33,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Text cannot be empty' }, { status: 400 });
   }
 
+  // Require authentication in live mode
+  if (!DEMO_MODE) {
+    try {
+      const { createClient } = await import('@/lib/supabase/server');
+      const supabase = await createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+    } catch {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+  }
+
   if (DEMO_MODE) {
     // If user typed custom text, build a smart parse from their input
     if (sanitizedText && sanitizedText !== DEMO_RAW_TEXT) {

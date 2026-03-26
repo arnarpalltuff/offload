@@ -38,6 +38,18 @@ export async function POST(request: Request) {
     });
   }
 
+  // Require authentication in live mode
+  try {
+    const { createClient } = await import('@/lib/supabase/server');
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+  } catch {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const Anthropic = (await import('@anthropic-ai/sdk')).default;
     const anthropic = new Anthropic();

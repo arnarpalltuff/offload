@@ -32,6 +32,20 @@ export async function POST(request: Request) {
 
   const sanitizedText = text && typeof text === 'string' ? text.slice(0, MAX_TEXT_LENGTH).trim() : '';
 
+  // Require authentication in live mode
+  if (!DEMO_MODE) {
+    try {
+      const { createClient } = await import('@/lib/supabase/server');
+      const supabase = await createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+    } catch {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+  }
+
   if (DEMO_MODE) {
     // Return mood-appropriate demo insight instead of always the same one
     const demoInsights: Record<number, string> = {
